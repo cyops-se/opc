@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/cyops-se/opc"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/konimarti/opc"
 )
 
 // App contains the opc connection and the API routes

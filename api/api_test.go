@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/konimarti/opc"
-	"github.com/konimarti/opc/api"
+	"github.com/cyops-se/opc"
+	"github.com/cyops-se/opc/api"
 )
 
 var a api.App
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	cfg.AddTag = true
 	cfg.DeleteTag = true
 
-	client,_ := opc.NewConnection(
+	client, _ := opc.NewConnection(
 		"Graybox.Simulator",
 		[]string{"localhost"},
 		[]string{},

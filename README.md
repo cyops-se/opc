@@ -1,12 +1,12 @@
 # OPC DA in Go
 
-[![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://github.com/konimarti/opc/blob/master/LICENSE)
-[![GoDoc](https://godoc.org/github.com/konimarti/observer?status.svg)](https://godoc.org/github.com/konimarti/opc)
-[![goreportcard](https://goreportcard.com/badge/github.com/konimarti/observer)](https://goreportcard.com/report/github.com/konimarti/opc)
+[![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://github.com/cyops-se/opc/blob/master/LICENSE)
+[![GoDoc](https://godoc.org/github.com/cyops-se/observer?status.svg)](https://godoc.org/github.com/cyops-se/opc)
+[![goreportcard](https://goreportcard.com/badge/github.com/cyops-se/observer)](https://goreportcard.com/report/github.com/cyops-se/opc)
 
 Read and write process and automation data in Go from an OPC server for monitoring and data analysis purposes (OPC DA protocol).
 
-```go get github.com/konimarti/opc```
+```go get github.com/cyops-se/opc```
 
 ## Usage
 ```go
@@ -30,7 +30,7 @@ opc.PrettyPrint(browser)
 
 ## Installation
 
-* ```go get github.com/konimarti/opc```
+* ```go get github.com/cyops-se/opc```
 
 ### Troubleshooting
 
@@ -63,7 +63,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/konimarti/opc"
+	"github.com/cyops-se/opc"
 )
 
 func main() {
@@ -95,7 +95,7 @@ map[numeric.sin.int64:{91 192 2019-06-21 15:23:08 +0000 UTC} numeric.saw.float:{
 ### opc-cli
 
 * ```opc-cli``` is a command-line interface to work with OPC servers: list available OPC servers, browse OPC tags on server, and read/write OPC tags.
-* Install it with ```go install github.com/konimarti/opc/cmds/opc-cli```
+* Install it with ```go install github.com/cyops-se/opc/cmds/opc-cli```
 
   - List OPC servers on a specific node: 
     ```
@@ -132,7 +132,7 @@ map[numeric.sin.int64:{91 192 2019-06-21 15:23:08 +0000 UTC} numeric.saw.float:{
 
 * Application to expose OPC tags with a JSON REST API.
 
-  - Install the app: ```go install github.com/konimarti/opc/cmds/opcapi```
+  - Install the app: ```go install github.com/cyops-se/opc/cmds/opcapi```
 
   - Create config file:
     ```
@@ -174,7 +174,7 @@ map[numeric.sin.int64:{91 192 2019-06-21 15:23:08 +0000 UTC} numeric.saw.float:{
 
 * Application to write OPC data directly to InfluxDB.
 
-  - Install the app: ```go install github.com/konimarti/opc/cmds/opcflux```
+  - Install the app: ```go install github.com/cyops-se/opc/cmds/opcflux```
 
   - Create InfluxDB database "test"
 

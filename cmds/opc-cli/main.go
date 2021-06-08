@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/konimarti/opc"
+	"github.com/cyops-se/opc"
 	"github.com/spf13/cobra"
 )
 
