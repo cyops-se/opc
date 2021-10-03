@@ -1,8 +1,23 @@
-# OPC DA in Go
-
+# OPC DA in Go - cyops-se version
 [![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://github.com/cyops-se/opc/blob/master/LICENSE)
 [![GoDoc](https://godoc.org/github.com/cyops-se/observer?status.svg)](https://godoc.org/github.com/cyops-se/opc)
 [![goreportcard](https://goreportcard.com/badge/github.com/cyops-se/observer)](https://goreportcard.com/report/github.com/cyops-se/opc)
+
+This is a fork from https://github.com/konimarti/opc that adds a cursor concept making it possible to open a 'cursor' (which is a regular OPC browser) that does not populate any branches or leaves but allow listing and traversing the OPC tree as you go, which can be useful if you have a large tree.
+
+The following functions are added
+```go
+  CreateBrowserCursor
+  CursorListBranches
+  CursorListLeaves
+  CursorPosition
+  MoveCursorDown
+  MoveCursorUp
+  MoveCursorHome
+  MoveCursorTo
+```
+
+
 
 Read and write process and automation data in Go from an OPC server for monitoring and data analysis purposes (OPC DA protocol).
 

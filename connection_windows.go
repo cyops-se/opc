@@ -5,6 +5,7 @@ package opc
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,6 +55,25 @@ func (ao *AutomationObject) CreateBrowser() (*Tree, error) {
 	buildTree(browser.ToIDispatch(), &root)
 
 	return &root, nil
+}
+
+//CreateBrowserCursor returns the OPCBrowser object from the OPCServer.
+//It only works if there is a successful connection.
+func (ao *AutomationObject) CreateBrowserCursor() (*ole.VARIANT, error) {
+	// check if server is running, if not return error
+	if !ao.IsConnected() {
+		return nil, errors.New("Cannot create browser because we are not connected.")
+	}
+
+	// create browser
+	browser, err := oleutil.CallMethod(ao.object, "CreateBrowser")
+	if err != nil {
+		return nil, errors.New("Failed to create OPCBrowser")
+	}
+
+	// move to root
+	oleutil.MustCallMethod(browser.ToIDispatch(), "MoveToRoot")
+	return browser, nil
 }
 
 //buildTree runs through the OPCBrowser and creates a tree with the OPC tags
@@ -488,4 +508,72 @@ func CreateBrowser(server string, nodes []string) (*Tree, error) {
 		return nil, err
 	}
 	return object.CreateBrowser()
+}
+
+//CreateBrowserCursor creates an opc browser representation that work as a cursor in the hierarchy
+// Use MoveCursorDown(), MoveCursorUp() and MoveCursorHome() to navigate in the hierarchy
+func CreateBrowserCursor(server string, nodes []string) (*ole.VARIANT, error) {
+	object := NewAutomationObject()
+	defer object.Close()
+	_, err := object.TryConnect(server, nodes)
+	if err != nil {
+		return nil, err
+	}
+	return object.CreateBrowserCursor()
+}
+
+func CursorListBranches(cursor *ole.VARIANT) []string {
+	var items []string
+
+	oleutil.MustCallMethod(cursor.ToIDispatch(), "ShowBranches").ToIDispatch()
+	count := oleutil.MustGetProperty(cursor.ToIDispatch(), "Count").Value().(int32)
+
+	for i := 1; i <= int(count); i++ {
+		nextName := oleutil.MustCallMethod(cursor.ToIDispatch(), "Item", i).Value()
+		items = append(items, nextName.(string))
+	}
+
+	return items
+}
+
+func CursorListLeaves(cursor *ole.VARIANT) []string {
+	var items []string
+
+	oleutil.MustCallMethod(cursor.ToIDispatch(), "ShowLeafs").ToIDispatch()
+	count := oleutil.MustGetProperty(cursor.ToIDispatch(), "Count").Value().(int32)
+
+	for i := 1; i <= int(count); i++ {
+		nextName := oleutil.MustCallMethod(cursor.ToIDispatch(), "Item", i).Value()
+		items = append(items, nextName.(string))
+	}
+	return items
+}
+
+func CursorPosition(cursor *ole.VARIANT) string {
+	position := oleutil.MustGetProperty(cursor.ToIDispatch(), "CurrentPosition").Value().(string)
+	return position
+}
+
+// MoveCursorDown traverse down one branch in the the supplied cursor
+func MoveCursorDown(cursor *ole.VARIANT, name string) *ole.VARIANT {
+	result := oleutil.MustCallMethod(cursor.ToIDispatch(), "MoveDown", name)
+	return result
+}
+
+// MoveCursorUp traverse up one branch in the the supplied tree object
+func MoveCursorUp(cursor *ole.VARIANT) *ole.VARIANT {
+	result := oleutil.MustCallMethod(cursor.ToIDispatch(), "MoveUp")
+	return result
+}
+
+// MoveCursorHome moves the cursor to the "root" node
+func MoveCursorHome(cursor *ole.VARIANT) {
+	oleutil.MustCallMethod(cursor.ToIDispatch(), "MoveToRoot")
+}
+
+// MoveCursorTo moves the cursor to the specified node (using . as delimiter)
+func MoveCursorTo(cursor *ole.VARIANT, p string) *ole.VARIANT {
+	branches := strings.Split(p, ".")
+	result := oleutil.MustCallMethod(cursor.ToIDispatch(), "MoveTo", branches)
+	return result
 }
