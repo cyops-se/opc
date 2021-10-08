@@ -328,20 +328,17 @@ func (ai *AutomationItems) readFromOpc(opcitem *ole.IDispatch) (Item, error) {
 	ts := ole.NewVariant(ole.VT_DATE, 0)
 
 	//read tag from opc server and monitor duration in seconds
-	t := time.Now()
+	t := time.Now().UTC()
 	_, err := oleutil.CallMethod(opcitem, "Read", OPCCache, &v, &q, &ts)
-	opcReadsDuration.Observe(time.Since(t).Seconds())
 
 	if err != nil {
-		opcReadsCounter.WithLabelValues("failed").Inc()
 		return Item{}, err
 	}
-	opcReadsCounter.WithLabelValues("success").Inc()
 
 	return Item{
 		Value:     v.Value(),
 		Quality:   ensureInt16(q.Value()), // FIX: ensure the quality value is int16
-		Timestamp: ts.Value().(time.Time),
+		Timestamp: t,
 	}, nil
 }
 
@@ -349,11 +346,8 @@ func (ai *AutomationItems) readFromOpc(opcitem *ole.IDispatch) (Item, error) {
 func (ai *AutomationItems) writeToOpc(opcitem *ole.IDispatch, value interface{}) error {
 	_, err := oleutil.CallMethod(opcitem, "Write", value)
 	if err != nil {
-		// TODO: Prometheus Monitoring
-		//opcWritesCounter.WithLabelValues("failed").Inc()
 		return err
 	}
-	//opcWritesCounter.WithLabelValues("failed").Inc()
 	return nil
 }
 
