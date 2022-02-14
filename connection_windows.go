@@ -5,6 +5,7 @@ package opc
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -272,11 +273,12 @@ type AutomationItems struct {
 	items         map[string]*ole.IDispatch
 }
 
-//addSingle adds the tag and returns an error. Client handles are not implemented yet.
-func (ai *AutomationItems) addSingle(tag string) error {
+// AddSingle adds the tag and returns an error. Client handles are not implemented yet.
+func (ai *AutomationItems) AddSingle(tag string) error {
 	clientHandle := int32(1)
 	item, err := oleutil.CallMethod(ai.addItemObject, "AddItem", tag, clientHandle)
 	if err != nil {
+		log.Printf("AddItem failed, tag: %s, error: %s", tag, err.Error())
 		return errors.New(tag + ":" + err.Error())
 	}
 	ai.items[tag] = item.ToIDispatch()
@@ -287,7 +289,7 @@ func (ai *AutomationItems) addSingle(tag string) error {
 func (ai *AutomationItems) Add(tags ...string) error {
 	var errResult string
 	for _, tag := range tags {
-		err := ai.addSingle(tag)
+		err := ai.AddSingle(tag)
 		if err != nil {
 			errResult = err.Error() + errResult
 		}
@@ -480,6 +482,23 @@ func NewConnection(server string, nodes []string, tags []string) (Connection, er
 		return &opcConnectionImpl{}, err
 	}
 	err = items.Add(tags...)
+	if err != nil {
+		return &opcConnectionImpl{}, err
+	}
+	conn := opcConnectionImpl{
+		AutomationObject: object,
+		AutomationItems:  items,
+		Server:           server,
+		Nodes:            nodes,
+	}
+
+	return &conn, nil
+}
+
+//NewConnection establishes a connection to the OpcServer object.
+func NewConnectionWithoutTags(server string, nodes []string) (Connection, error) {
+	object := NewAutomationObject()
+	items, err := object.TryConnect(server, nodes)
 	if err != nil {
 		return &opcConnectionImpl{}, err
 	}
