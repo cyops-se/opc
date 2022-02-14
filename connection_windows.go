@@ -586,7 +586,7 @@ func MoveCursorHome(cursor *ole.VARIANT) {
 
 // MoveCursorTo moves the cursor to the specified node (using . as delimiter)
 func MoveCursorTo(cursor *ole.VARIANT, p string) *ole.VARIANT {
-	branches := strings.Split(p, ".")
+	branches := strings.Split(p, "|")
 	result := oleutil.MustCallMethod(cursor.ToIDispatch(), "MoveTo", branches)
 	return result
 }
