@@ -280,7 +280,11 @@ func (ai *AutomationItems) AddSingle(tag string) error {
 	if err != nil {
 		log.Printf("AddItem failed, tag: %s, error: %s", tag, err.Error())
 		return errors.New(tag + ":" + err.Error())
+	} else if item.ToIDispatch() == nil {
+		log.Printf("AddItem failed, tag: %s, no error but item.ToIDispatch() is nil", tag)
+		return errors.New(tag + ": IDispatch is empty")
 	}
+
 	ai.items[tag] = item.ToIDispatch()
 	return nil
 }
@@ -417,6 +421,11 @@ func (conn *opcConnectionImpl) Read() map[string]Item {
 	defer conn.mu.Unlock()
 	allTags := make(map[string]Item)
 	for tag, opcitem := range conn.AutomationItems.items {
+		if opcitem == nil {
+			logger.Printf("Cannot read %s: IDispatch is nil. Skipping this tag.", tag)
+			continue
+		}
+
 		item, err := conn.AutomationItems.readFromOpc(opcitem)
 		if err != nil {
 			logger.Printf("Cannot read %s: %s. Trying to fix.", tag, err)
