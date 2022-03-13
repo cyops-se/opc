@@ -10,5 +10,5 @@ require (
 	github.com/influxdata/influxdb v1.7.6
 	github.com/spf13/cobra v0.0.5
 	gopkg.in/Knetic/govaluate.v3 v3.0.0
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.8
 )
