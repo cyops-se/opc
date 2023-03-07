@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package opc
@@ -5,7 +6,6 @@ package opc
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -18,24 +18,24 @@ func init() {
 	OleInit()
 }
 
-//OleInit initializes OLE.
+// OleInit initializes OLE.
 func OleInit() {
 	ole.CoInitializeEx(0, 0)
 }
 
-//OleRelease realeses OLE resources in opcAutomation.
+// OleRelease realeses OLE resources in opcAutomation.
 func OleRelease() {
 	ole.CoUninitialize()
 }
 
-//AutomationObject loads the OPC Automation Wrapper and handles to connection to the OPC Server.
+// AutomationObject loads the OPC Automation Wrapper and handles to connection to the OPC Server.
 type AutomationObject struct {
 	unknown *ole.IUnknown
 	object  *ole.IDispatch
 }
 
-//CreateBrowser returns the OPCBrowser object from the OPCServer.
-//It only works if there is a successful connection.
+// CreateBrowser returns the OPCBrowser object from the OPCServer.
+// It only works if there is a successful connection.
 func (ao *AutomationObject) CreateBrowser() (*Tree, error) {
 	// check if server is running, if not return error
 	if !ao.IsConnected() {
@@ -58,8 +58,8 @@ func (ao *AutomationObject) CreateBrowser() (*Tree, error) {
 	return &root, nil
 }
 
-//CreateBrowserCursor returns the OPCBrowser object from the OPCServer.
-//It only works if there is a successful connection.
+// CreateBrowserCursor returns the OPCBrowser object from the OPCServer.
+// It only works if there is a successful connection.
 func (ao *AutomationObject) CreateBrowserCursor() (*ole.VARIANT, error) {
 	// check if server is running, if not return error
 	if !ao.IsConnected() {
@@ -77,7 +77,7 @@ func (ao *AutomationObject) CreateBrowserCursor() (*ole.VARIANT, error) {
 	return browser, nil
 }
 
-//buildTree runs through the OPCBrowser and creates a tree with the OPC tags
+// buildTree runs through the OPCBrowser and creates a tree with the OPC tags
 func buildTree(browser *ole.IDispatch, branch *Tree) {
 	var count int32
 
@@ -130,8 +130,8 @@ func buildTree(browser *ole.IDispatch, branch *Tree) {
 
 }
 
-//Connect establishes a connection to the OPC Server on node.
-//It returns a reference to AutomationItems and error message.
+// Connect establishes a connection to the OPC Server on node.
+// It returns a reference to AutomationItems and error message.
 func (ao *AutomationObject) Connect(server string, node string) (*AutomationItems, error) {
 
 	// make sure there is not active connection before trying to connect
@@ -170,7 +170,7 @@ func (ao *AutomationObject) Connect(server string, node string) (*AutomationItem
 	return NewAutomationItems(addItemObject.ToIDispatch()), nil
 }
 
-//TryConnect loops over the nodes array and tries to connect to any of the servers.
+// TryConnect loops over the nodes array and tries to connect to any of the servers.
 func (ao *AutomationObject) TryConnect(server string, nodes []string) (*AutomationItems, error) {
 	var errResult string
 	for _, node := range nodes {
@@ -183,7 +183,7 @@ func (ao *AutomationObject) TryConnect(server string, nodes []string) (*Automati
 	return nil, errors.New("TryConnect was not successful: " + errResult)
 }
 
-//IsConnected check if the server is properly connected and up and running.
+// IsConnected check if the server is properly connected and up and running.
 func (ao *AutomationObject) IsConnected() bool {
 	if ao.object == nil {
 		return false
@@ -199,7 +199,7 @@ func (ao *AutomationObject) IsConnected() bool {
 	return true
 }
 
-//GetOPCServers returns a list of Prog ID on the specified node
+// GetOPCServers returns a list of Prog ID on the specified node
 func (ao *AutomationObject) GetOPCServers(node string) []string {
 	progids, err := oleutil.CallMethod(ao.object, "GetOPCServers", node)
 	if err != nil {
@@ -216,7 +216,7 @@ func (ao *AutomationObject) GetOPCServers(node string) []string {
 	return servers_found
 }
 
-//Disconnect checks if connected to server and if so, it calls 'disconnect'
+// Disconnect checks if connected to server and if so, it calls 'disconnect'
 func (ao *AutomationObject) disconnect() {
 	if ao.IsConnected() {
 		_, err := oleutil.CallMethod(ao.object, "Disconnect")
@@ -226,7 +226,7 @@ func (ao *AutomationObject) disconnect() {
 	}
 }
 
-//Close releases the OLE objects in the AutomationObject.
+// Close releases the OLE objects in the AutomationObject.
 func (ao *AutomationObject) Close() {
 	if ao.object != nil {
 		ao.disconnect()
@@ -237,7 +237,7 @@ func (ao *AutomationObject) Close() {
 	}
 }
 
-//NewAutomationObject connects to the COM object based on available wrappers.
+// NewAutomationObject connects to the COM object based on available wrappers.
 func NewAutomationObject() *AutomationObject {
 	wrappers := []string{"OPC.Automation.1", "Graybox.OPC.DAWrapper.1"}
 	var err error
@@ -266,8 +266,8 @@ func NewAutomationObject() *AutomationObject {
 	return &object
 }
 
-//AutomationItems store the OPCItems from OPCGroup and does the bookkeeping
-//for the individual OPC items. Tags can added, removed, and read.
+// AutomationItems store the OPCItems from OPCGroup and does the bookkeeping
+// for the individual OPC items. Tags can added, removed, and read.
 type AutomationItems struct {
 	addItemObject *ole.IDispatch
 	items         map[string]*ole.IDispatch
@@ -278,10 +278,10 @@ func (ai *AutomationItems) AddSingle(tag string) error {
 	clientHandle := int32(1)
 	item, err := oleutil.CallMethod(ai.addItemObject, "AddItem", tag, clientHandle)
 	if err != nil {
-		log.Printf("AddItem failed, tag: %s, error: %s", tag, err.Error())
+		logger.Printf("AddItem failed, tag: %s, error: %s", tag, err.Error())
 		return errors.New(tag + ":" + err.Error())
 	} else if item.ToIDispatch() == nil {
-		log.Printf("AddItem failed, tag: %s, no error but item.ToIDispatch() is nil", tag)
+		logger.Printf("AddItem failed, tag: %s, no error but item.ToIDispatch() is nil", tag)
 		return errors.New(tag + ": IDispatch is empty")
 	}
 
@@ -289,7 +289,7 @@ func (ai *AutomationItems) AddSingle(tag string) error {
 	return nil
 }
 
-//Add accepts a variadic parameters of tags.
+// Add accepts a variadic parameters of tags.
 func (ai *AutomationItems) Add(tags ...string) error {
 	var errResult string
 	for _, tag := range tags {
@@ -304,7 +304,7 @@ func (ai *AutomationItems) Add(tags ...string) error {
 	return errors.New(errResult)
 }
 
-//Remove removes the tag.
+// Remove removes the tag.
 func (ai *AutomationItems) Remove(tag string) {
 	item, ok := ai.items[tag]
 	if ok {
@@ -327,7 +327,19 @@ func ensureInt16(q interface{}) int16 {
 	return 0
 }
 
-//readFromOPC reads from the server and returns an Item and error.
+func ensureFloat64(v interface{}) float64 {
+	if f32, ok := v.(float32); ok {
+		return float64(f32)
+	}
+
+	if f64, ok := v.(float64); ok {
+		return f64
+	}
+
+	return 0.0
+}
+
+// readFromOPC reads from the server and returns an Item and error.
 func (ai *AutomationItems) readFromOpc(opcitem *ole.IDispatch) (Item, error) {
 	v := ole.NewVariant(ole.VT_R4, 0)
 	q := ole.NewVariant(ole.VT_INT, 0)
@@ -337,8 +349,17 @@ func (ai *AutomationItems) readFromOpc(opcitem *ole.IDispatch) (Item, error) {
 	t := time.Now().UTC()
 	_, err := oleutil.CallMethod(opcitem, "Read", OPCCache, &v, &q, &ts)
 
+	// Quick and Dirty: if quality OK and value 0.0 then try again from the cache
+	if err == nil && ensureInt16(q.Value()) == 192 && ensureFloat64(v.Value()) == 0.0 {
+		_, err = oleutil.CallMethod(opcitem, "Read", OPCCache, &v, &q, &ts)
+	}
+
 	if err != nil {
-		return Item{}, err
+		return Item{
+			Value:     0.0,            // return zero value, when flatlining ... check quality
+			Quality:   ensureInt16(0), // Bad (generic)
+			Timestamp: t,
+		}, nil
 	}
 
 	return Item{
@@ -348,7 +369,7 @@ func (ai *AutomationItems) readFromOpc(opcitem *ole.IDispatch) (Item, error) {
 	}, nil
 }
 
-//writeToOPC writes value to opc tag and return an error
+// writeToOPC writes value to opc tag and return an error
 func (ai *AutomationItems) writeToOpc(opcitem *ole.IDispatch, value interface{}) error {
 	_, err := oleutil.CallMethod(opcitem, "Write", value)
 	if err != nil {
@@ -357,7 +378,7 @@ func (ai *AutomationItems) writeToOpc(opcitem *ole.IDispatch, value interface{})
 	return nil
 }
 
-//Close closes the OLE objects in AutomationItems.
+// Close closes the OLE objects in AutomationItems.
 func (ai *AutomationItems) Close() {
 	if ai != nil {
 		for key, opcitem := range ai.items {
@@ -368,15 +389,15 @@ func (ai *AutomationItems) Close() {
 	}
 }
 
-//NewAutomationItems returns a new AutomationItems instance.
+// NewAutomationItems returns a new AutomationItems instance.
 func NewAutomationItems(opcitems *ole.IDispatch) *AutomationItems {
 	ai := AutomationItems{addItemObject: opcitems, items: make(map[string]*ole.IDispatch)}
 	return &ai
 }
 
-//opcRealServer implements the Connection interface.
-//It has the AutomationObject embedded for connecting to the server
-//and an AutomationItems to facilitate the OPC items bookkeeping.
+// opcRealServer implements the Connection interface.
+// It has the AutomationObject embedded for connecting to the server
+// and an AutomationItems to facilitate the OPC items bookkeeping.
 type opcConnectionImpl struct {
 	*AutomationObject
 	*AutomationItems
@@ -385,7 +406,7 @@ type opcConnectionImpl struct {
 	mu     sync.Mutex
 }
 
-//ReadItem returns an Item for a specific tag.
+// ReadItem returns an Item for a specific tag.
 func (conn *opcConnectionImpl) ReadItem(tag string) Item {
 	conn.mu.Lock()
 	defer conn.mu.Unlock()
@@ -403,7 +424,7 @@ func (conn *opcConnectionImpl) ReadItem(tag string) Item {
 	return Item{}
 }
 
-//Write writes a value to the OPC Server.
+// Write writes a value to the OPC Server.
 func (conn *opcConnectionImpl) Write(tag string, value interface{}) error {
 	conn.mu.Lock()
 	defer conn.mu.Unlock()
@@ -415,7 +436,7 @@ func (conn *opcConnectionImpl) Write(tag string, value interface{}) error {
 	return errors.New("No Write performed")
 }
 
-//Read returns a map of the values of all added tags.
+// Read returns a map of the values of all added tags.
 func (conn *opcConnectionImpl) Read() map[string]Item {
 	conn.mu.Lock()
 	defer conn.mu.Unlock()
@@ -437,7 +458,7 @@ func (conn *opcConnectionImpl) Read() map[string]Item {
 	return allTags
 }
 
-//Tags returns the currently active tags
+// Tags returns the currently active tags
 func (conn *opcConnectionImpl) Tags() []string {
 	var tags []string
 	if conn.AutomationItems != nil {
@@ -449,8 +470,8 @@ func (conn *opcConnectionImpl) Tags() []string {
 
 }
 
-//fix tries to reconnect if connection is lost by creating a new connection
-//with AutomationObject and creating a new AutomationItems instance.
+// fix tries to reconnect if connection is lost by creating a new connection
+// with AutomationObject and creating a new AutomationItems instance.
 func (conn *opcConnectionImpl) fix() {
 	var err error
 	if !conn.IsConnected() {
@@ -471,7 +492,7 @@ func (conn *opcConnectionImpl) fix() {
 	}
 }
 
-//Close closes the embedded types.
+// Close closes the embedded types.
 func (conn *opcConnectionImpl) Close() {
 	conn.mu.Lock()
 	defer conn.mu.Unlock()
@@ -483,7 +504,7 @@ func (conn *opcConnectionImpl) Close() {
 	}
 }
 
-//NewConnection establishes a connection to the OpcServer object.
+// NewConnection establishes a connection to the OpcServer object.
 func NewConnection(server string, nodes []string, tags []string) (Connection, error) {
 	object := NewAutomationObject()
 	items, err := object.TryConnect(server, nodes)
@@ -504,7 +525,7 @@ func NewConnection(server string, nodes []string, tags []string) (Connection, er
 	return &conn, nil
 }
 
-//NewConnection establishes a connection to the OpcServer object.
+// NewConnection establishes a connection to the OpcServer object.
 func NewConnectionWithoutTags(server string, nodes []string) (Connection, error) {
 	object := NewAutomationObject()
 	items, err := object.TryConnect(server, nodes)
@@ -521,7 +542,7 @@ func NewConnectionWithoutTags(server string, nodes []string) (Connection, error)
 	return &conn, nil
 }
 
-//CreateBrowser creates an opc browser representation
+// CreateBrowser creates an opc browser representation
 func CreateBrowser(server string, nodes []string) (*Tree, error) {
 	object := NewAutomationObject()
 	defer object.Close()
@@ -532,7 +553,7 @@ func CreateBrowser(server string, nodes []string) (*Tree, error) {
 	return object.CreateBrowser()
 }
 
-//CreateBrowserCursor creates an opc browser representation that work as a cursor in the hierarchy
+// CreateBrowserCursor creates an opc browser representation that work as a cursor in the hierarchy
 // Use MoveCursorDown(), MoveCursorUp() and MoveCursorHome() to navigate in the hierarchy
 func CreateBrowserCursor(server string, nodes []string) (*ole.VARIANT, error) {
 	object := NewAutomationObject()
