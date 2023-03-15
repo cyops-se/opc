@@ -39,13 +39,16 @@ type AutomationObject struct {
 func (ao *AutomationObject) CreateBrowser() (*Tree, error) {
 	// check if server is running, if not return error
 	if !ao.IsConnected() {
-		return nil, errors.New("Cannot create browser because we are not connected.")
+		logger.Println("Cannot create browser because we are not connected")
+		return nil, errors.New("cannot create browser because we are not connected")
 	}
 
 	// create browser
 	browser, err := oleutil.CallMethod(ao.object, "CreateBrowser")
 	if err != nil {
-		return nil, errors.New("Failed to create OPCBrowser")
+		msg := fmt.Sprintf("Failed to create OPCBrowser: %s", err.Error())
+		logger.Println(msg)
+		return nil, errors.New(msg)
 	}
 
 	// move to root
@@ -63,13 +66,16 @@ func (ao *AutomationObject) CreateBrowser() (*Tree, error) {
 func (ao *AutomationObject) CreateBrowserCursor() (*ole.VARIANT, error) {
 	// check if server is running, if not return error
 	if !ao.IsConnected() {
-		return nil, errors.New("Cannot create browser because we are not connected.")
+		logger.Println("Cannot create browser because we are not connected")
+		return nil, errors.New("cannot create browser because we are not connected")
 	}
 
 	// create browser
 	browser, err := oleutil.CallMethod(ao.object, "CreateBrowser")
 	if err != nil {
-		return nil, errors.New("Failed to create OPCBrowser")
+		msg := fmt.Sprintf("Failed to create OPCBrowser: %s", err.Error())
+		logger.Println(msg)
+		return nil, errors.New(msg)
 	}
 
 	// move to root
@@ -138,34 +144,38 @@ func (ao *AutomationObject) Connect(server string, node string) (*AutomationItem
 	ao.disconnect()
 
 	// try to connect to opc server and check for error
-	logger.Printf("Connecting to %s on node %s\n", server, node)
+	logger.Printf("Connecting to %s on node %s ...\n", server, node)
 	_, err := oleutil.CallMethod(ao.object, "Connect", server, node)
 	if err != nil {
-		logger.Println("Connection failed.")
-		return nil, errors.New("Connection failed")
+		msg := fmt.Sprintf("Connection failed: %s", err.Error())
+		logger.Println(msg)
+		return nil, errors.New(msg)
 	}
 
 	// set up opc groups and items
 	opcGroups, err := oleutil.GetProperty(ao.object, "OPCGroups")
 	if err != nil {
-		//logger.Println(err)
-		return nil, errors.New("cannot get OPCGroups property")
+		msg := fmt.Sprintf("Cannot get OPCGroups property failed: %s", err.Error())
+		logger.Println(msg)
+		return nil, errors.New(msg)
 	}
 	opcGrp, err := oleutil.CallMethod(opcGroups.ToIDispatch(), "Add")
 	if err != nil {
-		// logger.Println(err)
-		return nil, errors.New("cannot add new OPC Group")
+		msg := fmt.Sprintf("Cannot add new OPC Group: %s", err.Error())
+		logger.Println(msg)
+		return nil, errors.New(msg)
 	}
 	addItemObject, err := oleutil.GetProperty(opcGrp.ToIDispatch(), "OPCItems")
 	if err != nil {
-		// logger.Println(err)
-		return nil, errors.New("cannot get OPC Items")
+		msg := fmt.Sprintf("Cannot get OPC Items: %s", err.Error())
+		logger.Println(msg)
+		return nil, errors.New(msg)
 	}
 
 	opcGroups.ToIDispatch().Release()
 	opcGrp.ToIDispatch().Release()
 
-	logger.Println("Connected.")
+	logger.Println("Connected")
 
 	return NewAutomationItems(addItemObject.ToIDispatch()), nil
 }
@@ -180,7 +190,10 @@ func (ao *AutomationObject) TryConnect(server string, nodes []string) (*Automati
 		}
 		errResult = errResult + err.Error() + "\n"
 	}
-	return nil, errors.New("TryConnect was not successful: " + errResult)
+
+	msg := fmt.Sprintf("TryConnect was not successful: %s" + errResult)
+	logger.Println(msg)
+	return nil, errors.New(msg)
 }
 
 // IsConnected check if the server is properly connected and up and running.
@@ -190,7 +203,7 @@ func (ao *AutomationObject) IsConnected() bool {
 	}
 	stateVt, err := oleutil.GetProperty(ao.object, "ServerState")
 	if err != nil {
-		logger.Println("GetProperty call for ServerState failed", err)
+		logger.Println("GetProperty call for ServerState failed:", err.Error())
 		return false
 	}
 	if stateVt.Value().(int32) != OPCRunning {
@@ -203,7 +216,7 @@ func (ao *AutomationObject) IsConnected() bool {
 func (ao *AutomationObject) GetOPCServers(node string) []string {
 	progids, err := oleutil.CallMethod(ao.object, "GetOPCServers", node)
 	if err != nil {
-		logger.Println("GetOPCServers call failed.")
+		logger.Println("GetOPCServers call failed:", err.Error())
 		return []string{}
 	}
 
@@ -219,9 +232,12 @@ func (ao *AutomationObject) GetOPCServers(node string) []string {
 // Disconnect checks if connected to server and if so, it calls 'disconnect'
 func (ao *AutomationObject) disconnect() {
 	if ao.IsConnected() {
+		logger.Println("Disconnecting existing connection to automation object")
 		_, err := oleutil.CallMethod(ao.object, "Disconnect")
 		if err != nil {
-			logger.Println("Failed to disconnect.")
+			logger.Printf("Failed to disconnect: %s\n", err.Error())
+		} else {
+			logger.Println("Disconnected")
 		}
 	}
 }
@@ -248,7 +264,7 @@ func NewAutomationObject() *AutomationObject {
 			logger.Println("Loaded OPC Automation object with wrapper", wrapper)
 			break
 		}
-		logger.Println("Could not load OPC Automation object with wrapper", wrapper)
+		logger.Println("Could not load OPC Automation object with wrapper", wrapper, ":", err.Error())
 	}
 	if err != nil {
 		return &AutomationObject{}
@@ -256,7 +272,7 @@ func NewAutomationObject() *AutomationObject {
 
 	opc, err := unknown.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
-		fmt.Println("Could not QueryInterface")
+		fmt.Println("Could not QueryInterface:", err.Error())
 		return &AutomationObject{}
 	}
 	object := AutomationObject{
